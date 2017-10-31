@@ -85,10 +85,12 @@ app.on('ready', async () => {
   session.defaultSession.cookies.set(cookie, (error) => {
     if (error) console.error(error)
   })
+  console.log(session.defaultSession.cookies);
+
 //////////////////////////////////////////////////////////////////
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
-
+  console.log(mainWindow);
   // @TODO: Use 'ready-to-show' event
   //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
   mainWindow.webContents.on('did-finish-load', () => {

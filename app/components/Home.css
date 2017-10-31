@@ -4,7 +4,7 @@
   left: 10px;
   bottom: 20px;
   text-align: center;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .container h2 {
@@ -13,4 +13,25 @@
 
 .container a {
   font-size: 1.4rem;
+}
+
+table, th, td{
+	border: 1px white solid;
+	border-collapse: collapse;
+}
+th, td{
+	padding: 4px;
+	overflow: hidden;
+}
+table{
+	width: 285px;
+	margin-bottom: 10px;
+}
+th{
+	font-size: 13px;
+	font-weight: 2px;
+}
+td{
+	font-size: 13px;
+	text-overflow: clip;
 }
