@@ -12,6 +12,9 @@ export default class Home extends Component {
       newTicker: "",
       json: {},
       tickers: [],
+      tableSize: 5,
+      page: 0,
+      currentPage: [],
     }
     this.addTicker = this.addTicker.bind(this);
     this.clearTickers = this.clearTickers.bind(this);
@@ -22,11 +25,21 @@ export default class Home extends Component {
   	var app = this;
     storage.getAll(function(error, data){
     	if(error) throw error;
-    	var importedTickers = [];
+    	let importedTickers = [];
     	Object.keys(data).forEach((key)=>{
     		importedTickers.push(data[key]);
     	})
-    	app.setState({tickers: importedTickers});
+    	let page = []
+    	if(importedTickers.length >= 5){
+    		page = importedTickers.slice(0, 5);
+    	}
+    	else{
+    		page = importedTickers;
+    	}
+    	app.setState({
+    		tickers: importedTickers,
+    		currentPage: page,
+    	});
     });
   }
 
@@ -42,13 +55,14 @@ export default class Home extends Component {
     }).then(json => {
       if(json.Message === undefined){
         console.log(json);
-        var tickers = this.state.tickers;
+        let tickers = this.state.tickers;
         tickers.push(json);
         storage.set(json.Symbol, json, function(error){
         	if(error) throw error;
         });
         this.setState({
           tickers: tickers,
+          currentPage: tickers.slice(this.state.page, this.state.page + 5),
           newTicker: "",
         });
       }
@@ -67,6 +81,7 @@ export default class Home extends Component {
   	});
   	this.setState({
   		tickers: [],
+  		currentPage: [],
   	})
   }
 
@@ -74,8 +89,33 @@ export default class Home extends Component {
     this.setState({newTicker: e.target.value});
   }
 
+  nextPage(){
+  	let page = this.state.page;
+  	if(this.state.tickers.length - (page * 5) < 0){
+  		alert("No more page after this");
+  	}
+  	else{
+  		page++;
+  		this.setState({
+  			currentPage: this.state.tickers.slice((page * 5), (page + 1)*5),
+  			page: page,
+  		})
+  	}
+  }
+  prevPage(){
+  	let page = this.state.page;
+  	if(page - 1 < 0){
+  		alert("No more page before this");
+  	}
+  	else{
+  		this.setState({
+  			currentPage: this.state.tickers.slice((page - 1) * 5, page*5),
+  			page: page - 1,
+  		})
+  	}
+  }
   render() {
-    var tickers = this.state.tickers.map((ticker)=>{
+    var tickers = this.state.currentPage.map((ticker)=>{
       return(
         <tr key={ticker.Symbol}>
           <td width="25%">{ticker.Symbol}</td>
@@ -107,8 +147,10 @@ export default class Home extends Component {
           </form>
           <button onClick={this.clearTickers}>Clear Tickers</button>
           <div>
-          	<i className="fa fa-arrow-left fa-2x" />
-          	<i className="fa fa-arrow-right fa-2x" />
+          	<i className="fa fa-arrow-left fa-2x" 
+          		onClick={this.prevPage.bind(this)} />
+          	<i className="fa fa-arrow-right fa-2x"
+          		onClick={this.nextPage.bind(this)} />
           </div>
         </div>
       </div>
