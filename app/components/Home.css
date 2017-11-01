@@ -28,18 +28,18 @@ table{
 	margin-bottom: 10px;
 }
 th{
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 2px;
 }
 td{
-	font-size: 13px;
+	font-size: 12px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-loading {
-  position:absolute;
+overlay {
+	position:absolute;
   top:0;
   left:0;
   right:0;
