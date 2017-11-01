@@ -24,7 +24,7 @@ th, td{
 	overflow: hidden;
 }
 table{
-	width: 285px;
+	width: 410px;
 	margin-bottom: 10px;
 }
 th{
@@ -47,4 +47,15 @@ loading {
   background-color:rgba(0, 0, 0, 0.75);
   z-index:9999;
   color: white;
+}
+
+.navButtons{
+	display: flex;
+	justify-content: space-around;
+	position: absolute;
+	bottom: 10px;
+	width: 100%;
+}
+.navButtons p{
+	font-size: 14px;
 }

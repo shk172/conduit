@@ -58,6 +58,7 @@ export default class Home extends Component {
       }
       throw new Error("Error fetching stock data");
     }).then(json => {
+    	console.log(json);
       if(json.Message === undefined){
       	json.Price = {};
 		    fetch(avurl).then(response=>{
@@ -66,6 +67,7 @@ export default class Home extends Component {
 		    	}
 		    	throw new Error("Error fetching stock price");
 		    }).then(prices=>{
+		    	console.log(prices);
 			    let lastTime = prices['Meta Data']['3. Last Refreshed'];
 			    json.Price = prices['Time Series (1min)'][lastTime];
 			    let tickers = this.state.tickers;
@@ -73,6 +75,7 @@ export default class Home extends Component {
 	        storage.set(json.Symbol, json, function(error){
 	        	if(error) throw error;
 	        });
+	        console.log(tickers);
 	        this.setState({
 	          tickers: tickers,
 	          currentPage: tickers.slice(this.state.page * 5, (this.state.page*5) + 5),
@@ -86,11 +89,13 @@ export default class Home extends Component {
       }
     }).catch(error =>{
       console.log(error);
-      alert(error)
+      alert(error);
+      this.setState({loading: false});
     })
   }
 
-  clearTickers(){
+  clearTickers(e){
+  	e.preventDefault();
   	storage.clear(function(error){
   		if(error) throw error;
   	});
@@ -110,7 +115,7 @@ export default class Home extends Component {
   		alert("No more page after this");
   		return;
   	}
-  	if(this.state.tickers.length - (page * 5) < 0){
+  	if(Math.ceil(this.state.tickers.length/5) <= page + 1){
   		alert("No more page after this");
   		return;
   	}
@@ -136,11 +141,17 @@ export default class Home extends Component {
   }
   render() {
     var tickers = this.state.currentPage.map((ticker)=>{
+    	let change = parseFloat(ticker.Price['4. close']).toFixed(2) - ticker.Open.toFixed(2);
+      change = Math.round((change + 0.00001) * 100) / 100;
+      if(change > 0){
+      	change = "+" + change;
+      }
       return(
         <tr key={ticker.Symbol}>
-          <td width="25%" height="5">{ticker.Symbol}</td>
-          <td width="50%" height="5">{ticker.Name}</td>
-          <td width="25%" height="5">{ticker.Price['4. close']}</td>
+          <td width="20%" height="5">{ticker.Symbol}</td>
+          <td width="40%" height="5">{ticker.Name}</td>
+          <td width="20%" height="5">{parseFloat(ticker.Price['4. close']).toFixed(2)}</td>
+          <td width="20%" height="5">{change}</td>
         </tr>
       )
     })
@@ -160,9 +171,10 @@ export default class Home extends Component {
         <table>
           <tbody>
             <tr>
-              <th width="25%">Symbol</th>
-              <th width="50%">Company Name</th>
-              <th width="25%">Price</th>
+              <th width="20%">Symbol</th>
+              <th width="40%">Company Name</th>
+              <th width="20%">Price</th>
+              <th width="20%">Change</th>
             </tr>
             {tickers}
           </tbody>
@@ -174,11 +186,12 @@ export default class Home extends Component {
               value={this.state.newTicker}
               onChange={this.handleChange}></input>
             <input type="submit"/>
+            <button onClick={this.clearTickers}>Clear Tickers</button>
           </form>
-          <button onClick={this.clearTickers}>Clear Tickers</button>
-          <div>
+          <div className={styles.navButtons}>
           	<i className="fa fa-arrow-left fa-2x" 
           		onClick={this.prevPage.bind(this)} />
+          	<p>{this.state.page + 1}/{Math.ceil(this.state.tickers.length/5)}</p>
           	<i className="fa fa-arrow-right fa-2x"
           		onClick={this.nextPage.bind(this)} />
           </div>
