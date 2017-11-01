@@ -65,17 +65,17 @@ export default class Home extends Component {
 		    }).then(prices=>{
 			    let lastTime = prices['Meta Data']['3. Last Refreshed'];
 			    json.Price = prices['Time Series (1min)'][lastTime];
+			    let tickers = this.state.tickers;
+	        tickers.push(json);
+	        storage.set(json.Symbol, json, function(error){
+	        	if(error) throw error;
+	        });
+	        this.setState({
+	          tickers: tickers,
+	          currentPage: tickers.slice(this.state.page * 5, (this.state.page*5) + 5),
+	          newTicker: "",
+	        });
 		    })      
-        let tickers = this.state.tickers;
-        tickers.push(json);
-        storage.set(json.Symbol, json, function(error){
-        	if(error) throw error;
-        });
-        this.setState({
-          tickers: tickers,
-          currentPage: tickers.slice(this.state.page * 5, (this.state.page*5) + 5),
-          newTicker: "",
-        });
       }
       else{
         throw new Error(json.Message);
@@ -134,9 +134,9 @@ export default class Home extends Component {
     var tickers = this.state.currentPage.map((ticker)=>{
       return(
         <tr key={ticker.Symbol}>
-          <td width="25%">{ticker.Symbol}</td>
-          <td width="50%">{ticker.Name}</td>
-          <td width="25%">{ticker.Price['4. close']}</td>
+          <td width="25%" height="5">{ticker.Symbol}</td>
+          <td width="50%" height="5">{ticker.Name}</td>
+          <td width="25%" height="5">{ticker.Price['4. close']}</td>
         </tr>
       )
     })

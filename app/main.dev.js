@@ -63,31 +63,8 @@ app.on('ready', async () => {
     resizable: false,
     show: false,
     width: 330,
-    height: 330
+    height: 330,
   });
-
-/////////////////////////////////////////////////////////////////
-  const {session} = require('electron')
-
-  // Query all cookies.
-  session.defaultSession.cookies.get({}, (error, cookies) => {
-    console.log(error, cookies)
-  })
-
-  // Query all cookies associated with a specific url.
-  session.defaultSession.cookies.get({url: 'http://www.github.com'}, (error, cookies) => {
-    console.log(error, cookies)
-  })
-
-  // Set a cookie with the given cookie data;
-  // may overwrite equivalent cookies if they exist.
-  const cookie = {url: 'http://www.github.com', name: 'dummy_name', value: 'dummy'}
-  session.defaultSession.cookies.set(cookie, (error) => {
-    if (error) console.error(error)
-  })
-  console.log(session.defaultSession.cookies);
-
-//////////////////////////////////////////////////////////////////
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
   console.log(mainWindow);
@@ -105,7 +82,8 @@ app.on('ready', async () => {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
+  
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
+  mainWindow.setMenu(null);
 });
