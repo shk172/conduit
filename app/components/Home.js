@@ -15,6 +15,7 @@ export default class Home extends Component {
       tableSize: 5,
       page: 0,
       currentPage: [],
+      loading: true,
     }
     this.addTicker = this.addTicker.bind(this);
     this.clearTickers = this.clearTickers.bind(this);
@@ -39,12 +40,14 @@ export default class Home extends Component {
     	app.setState({
     		tickers: importedTickers,
     		currentPage: page,
+    		loading: false,
     	});
     });
   }
 
   addTicker(e){
     e.preventDefault();
+    this.setState({loading: true})
     let avapi = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&interval=1min&apikey=K2KAC8WYMD2CQHI5&symbol=";
     let api = "http://dev.markitondemand.com/MODApis/Api/v2/Quote/json?symbol=";
     var url = api + this.state.newTicker;
@@ -74,6 +77,7 @@ export default class Home extends Component {
 	          tickers: tickers,
 	          currentPage: tickers.slice(this.state.page * 5, (this.state.page*5) + 5),
 	          newTicker: "",
+	          loading: false,
 	        });
 		    })      
       }
@@ -140,9 +144,19 @@ export default class Home extends Component {
         </tr>
       )
     })
+    var loading = {};
+    if(this.state.loading){
+    	loading =(
+    		<loading><p>loading...</p></loading>
+    		)
+    }
+    else{
+    	loading = null;
+    }
     return (
       <div>
         <div className={styles.container} data-tid="container">
+        {loading}
         <table>
           <tbody>
             <tr>
