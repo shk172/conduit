@@ -118,6 +118,7 @@ export default class Home extends Component {
   	this.setState({
   		tickers: [],
   		currentPage: [],
+  		page: 1,
   	})
   }
 
@@ -181,15 +182,15 @@ export default class Home extends Component {
       }
       return(
         <tr key={ticker.Symbol}>
-          <td width="15%" height="5">{ticker.Symbol}</td>
+          <td width="10%" height="5">{ticker.Symbol}</td>
           <td width="40%" height="5">{ticker.Name}</td>
-          <td width="15%" height="5">{parseFloat(ticker.Price['4. close']).toFixed(2)}</td>
-          <td width="15%" height="5">{change}</td>
-          <td width="15%" height="5">
+          <td width="12%" height="5">{parseFloat(ticker.Price['4. close']).toFixed(2)}</td>
+          <td width="12%" height="5">{change}</td>
+          <td width="12%" height="5">
           {Math.round(((parseFloat(ticker.Price['4. close'])*ticker.Price["number"])
           	.toFixed(2) - (ticker.Price['yesterdayClose']*ticker.Price["number"]).toFixed(2) + 0.00001) * 100) / 100}
           </td>
-          <td width="15%" height="5">
+          <td width="14%" height="5">
           {Math.round(((parseFloat(ticker.Price['4. close'])*ticker.Price["number"])
           	.toFixed(2) - (ticker.Price.bought*ticker.Price["number"]).toFixed(2) + 0.00001) * 100) / 100}
           </td>
@@ -249,24 +250,28 @@ export default class Home extends Component {
         <table>
           <tbody>
             <tr>
-              <th width="15%">Symbol</th>
+              <th width="10%">Symbol</th>
               <th width="40%">Company Name</th>
-              <th width="15%">Price $</th>
-              <th width="15%">Change $</th>
-              <th width="15%">Day's Gain $</th>
-              <th width="15%">Total Gain $</th>
+              <th width="12%">Price $</th>
+              <th width="12%">Change $</th>
+              <th width="12%">Day's Gain $</th>
+              <th width="14%">Total Gain $</th>
             </tr>
             {tickers}
           </tbody>
         </table>
-        <button onClick={this.addTickerButton}>Add New Ticker</button>
-        <button onClick={this.clearTickers}>Clear Tickers</button>
-          <div className={styles.navButtons}>
-          	<i className="fa fa-arrow-left fa-2x" 
-          		onClick={this.prevPage.bind(this)} />
-          	<p>{this.state.page + 1}/{(this.state.tickers.length === 0)? 1 : Math.ceil(this.state.tickers.length/5)}</p>
-          	<i className="fa fa-arrow-right fa-2x"
-          		onClick={this.nextPage.bind(this)} />
+          <div className={styles.nav}>
+          	<div className={styles.navButtons}>
+          		<button onClick={this.addTickerButton}>Add New Ticker</button>
+        			<button onClick={this.clearTickers}>Clear Tickers</button>
+          	</div>
+          	<div className={styles.navDirections}>
+	          	<i className="fa fa-arrow-left fa" 
+	          		onClick={this.prevPage.bind(this)} />
+	          	<p>{this.state.page + 1}/{(this.state.tickers.length === 0)? 1 : Math.ceil(this.state.tickers.length/5)}</p>
+	          	<i className="fa fa-arrow-right fa"
+	          		onClick={this.nextPage.bind(this)} />
+	          </div>
           </div>
         </div>
       </div>
