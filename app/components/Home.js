@@ -2,9 +2,14 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Home.css';
-
+import alphaVantage from '../alphaVantageWrapper';
 const storage = require('electron-json-storage');
 const apiKey = "K2KAC8WYMD2CQHI5"
+const avapi = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&apikey=K2KAC8WYMD2CQHI5&symbol=";
+const api = "http://dev.markitondemand.com/MODApis/Api/v2/Quote/json?symbol=";
+
+var av = new alphaVantage("K2KAC8WYMD2CQHI5");
+av.test();
 export default class Home extends Component {
   constructor(props){
     super(props);
@@ -23,6 +28,7 @@ export default class Home extends Component {
     this.addTickerButton = this.addTickerButton.bind(this);
     this.clearTickers = this.clearTickers.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.timer = this.timer.bind(this);
   }
 
   componentWillMount(){
@@ -48,14 +54,48 @@ export default class Home extends Component {
     });
   }
 
+	componentDidMount() {
+	   var intervalId = setInterval(this.timer, 60000);
+	   // store intervalId in the state so it can be accessed later:
+	   this.setState({intervalId: intervalId});
+	}
+
+	componentWillUnmount() {
+	   // use intervalId from the state to clear the interval
+	   clearInterval(this.state.intervalId);
+	}
+
+	timer() {
+		var tickers = this.state.tickers;
+		var newTickers = []
+		tickers.forEach(ticker=>{
+			let avurl = avapi + ticker.Symbol;
+			fetch(avurl).then(response=>{
+			  	if(response.ok){
+			  		return response.json();
+			  	}
+			  	throw new Error("Error updating stock price for" + ticker.Symbol);
+			}).then(prices=>{
+		    let lastTime = prices['Meta Data']['3. Last Refreshed'].slice(0,10);
+		    ticker.Price["4. close"] = prices['Time Series (Daily)'][lastTime]["4. close"];
+		    ticker.Price["yesterdayClose"] = prices['Time Series (Daily)'][Object.keys(prices['Time Series (Daily)'])[1]]['4. close'];
+		    newTickers.push(ticker);
+		    storage.set(ticker.Symbol, ticker, function(error){
+		    	if(error) throw error;
+		    });
+		    this.setState({
+		      tickers: newTickers
+		    });
+		  })
+		})
+	}
+
   addTicker(e){
     e.preventDefault();
     this.setState({
     	loading: true,
     	addingTicker: false,
     })
-    let avapi = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&apikey=K2KAC8WYMD2CQHI5&symbol=";
-    let api = "http://dev.markitondemand.com/MODApis/Api/v2/Quote/json?symbol=";
     var url = api + this.state.newTickerSymbol;
     let avurl = avapi + this.state.newTickerSymbol;
     fetch(url).then(response => {
@@ -72,7 +112,7 @@ export default class Home extends Component {
 		    	}
 		    	throw new Error("Error fetching stock price");
 		    }).then(prices=>{
-			    let lastTime = prices['Meta Data']['3. Last Refreshed'];
+			    let lastTime = prices['Meta Data']['3. Last Refreshed'].slice(0,10);
 			    json.Price = prices['Time Series (Daily)'][lastTime];
 			    json.Price["bought"] = this.state.newTickerPrice;
 			    json.Price["number"] = this.state.newTickerNumber;
@@ -107,7 +147,6 @@ export default class Home extends Component {
   	this.setState({
   		addingTicker: true,
   	});
-  	console.log(this.state);
   }
 
   clearTickers(e){
@@ -174,7 +213,6 @@ export default class Home extends Component {
   }
   render() {
     var tickers = this.state.currentPage.map((ticker)=>{
-    	console.log(ticker);
     	let change = parseFloat(ticker.Price['4. close']).toFixed(2) - parseFloat(ticker.Price['yesterdayClose']).toFixed(2);
       change = Math.round((change + 0.00001) * 100) / 100;
       if(change > 0){
