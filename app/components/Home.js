@@ -5,11 +5,84 @@ import styles from './Home.css';
 import alphaVantage from '../alphaVantageWrapper';
 const storage = require('electron-json-storage');
 const apiKey = "K2KAC8WYMD2CQHI5"
-const avapi = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&apikey=K2KAC8WYMD2CQHI5&symbol=";
 const api = "http://dev.markitondemand.com/MODApis/Api/v2/Quote/json?symbol=";
 
-var av = new alphaVantage("K2KAC8WYMD2CQHI5");
+var av = new alphaVantage(apiKey);
 av.test();
+
+function Ticker(symbol, name, numStock, priceBought, latestPrice){
+	this.symbol = symbol;
+	this.numStock = numStock;
+	this.priceBought = priceBought;
+	this.latestPrice = latestPrice;
+	this.name = name;
+	this.yesterdayPrice = 0;
+
+	this.updateLatestPrice = function(price){
+		this.latestPrice = price;
+	}
+
+	this.getNumStock = function(){
+		return this.numStock;
+	}
+
+	this.getSymbol = function(){
+		return this.symbol;
+	}
+
+	this.getName = function(){
+		return this.name;
+	}
+
+	this.getPriceBought = function(){
+		return this.priceBought;
+	}
+
+	this.getLatestPrice = function(){
+		return this.latestPrice;
+	}
+
+	this.setYesterdayPrice = function(yesterdayPrice){
+		this.yesterdayPrice = yesterdayPrice;
+	}
+	this.getYesterdayPrice = function(){
+		return this.yesterdayPrice;
+	}
+}
+
+
+function Data(){
+	this.tickers = {};
+
+	this.importTickers = function(tickers){
+		this.tickers = tickers;
+	}
+
+	this.addTicker = function(ticker){
+		this.tickers[ticker.symbol] = ticker;
+	}
+
+	this.updateTicker = function(symbol, ticker){
+		this.tickers[symbol] = ticker;
+	}
+
+	this.removeTicker = function(symbol){
+		delete this.tickers[symbol];
+	}
+
+	this.getTicker = function(symbol){
+		return this.tickers[symbol];
+	}
+	this.getTickers = function(){
+		return this.tickers;
+	}
+	this.getKeys = function(){
+		return Object.keys(this.tickers);
+	}
+}
+
+
+
 export default class Home extends Component {
   constructor(props){
     super(props);
@@ -17,38 +90,37 @@ export default class Home extends Component {
       newTickerSymbol: "",
       newTickerPrice: 0,
       newTickerNumber: 0,
-      json: {},
-      tickers: [],
       tableSize: 5,
       page: 0,
       currentPage: [],
-      loading: true,
+      loading: false,
+
+      data: new Data(),
+      refreshTime: 1,
     }
     this.addTicker = this.addTicker.bind(this);
     this.addTickerButton = this.addTickerButton.bind(this);
     this.clearTickers = this.clearTickers.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.refreshTimer = this.refreshTimer.bind(this);
     this.timer = this.timer.bind(this);
   }
 
   componentWillMount(){
   	var app = this;
-    storage.getAll(function(error, data){
+    storage.get("Data", function(error, data){
     	if(error) throw error;
-    	let importedTickers = [];
-    	Object.keys(data).forEach((key)=>{
-    		importedTickers.push(data[key]);
-    	})
-    	let page = []
-    	if(importedTickers.length >= 5){
-    		page = importedTickers.slice(0, 5);
-    	}
-    	else{
-    		page = importedTickers;
-    	}
+    	let newData = new Data();
+    	newData.importTickers(data.tickers);
+    	newData.getKeys().forEach(symbol=>{
+    		let ticker = newData.getTicker(symbol);
+				let newTicker = new Ticker(ticker.symbol, ticker.name, ticker.numStock, ticker.priceBought, ticker.latestPrice)
+				newData.updateTicker(symbol, newTicker);
+			})
+    	console.log(newData);
     	app.setState({
-    		tickers: importedTickers,
-    		currentPage: page,
+    		data: newData,
+    		currentPage: newData.getKeys().slice(0,5),
     		loading: false,
     	});
     });
@@ -56,38 +128,36 @@ export default class Home extends Component {
 
 	componentDidMount() {
 	   var intervalId = setInterval(this.timer, 60000);
+	   var timerId = setInterval(this.refreshTimer, 1000);
 	   // store intervalId in the state so it can be accessed later:
 	   this.setState({intervalId: intervalId});
 	}
+
 
 	componentWillUnmount() {
 	   // use intervalId from the state to clear the interval
 	   clearInterval(this.state.intervalId);
 	}
 
+	refreshTimer(){
+		this.setState({
+			refreshTime: this.state.refreshTime + 1,
+		})
+	}
+
 	timer() {
-		var tickers = this.state.tickers;
-		var newTickers = []
-		tickers.forEach(ticker=>{
-			let avurl = avapi + ticker.Symbol;
-			fetch(avurl).then(response=>{
-			  	if(response.ok){
-			  		return response.json();
-			  	}
-			  	throw new Error("Error updating stock price for" + ticker.Symbol);
-			}).then(prices=>{
-		    let lastTime = prices['Meta Data']['3. Last Refreshed'].slice(0,10);
-		    ticker.Price["4. close"] = prices['Time Series (Daily)'][lastTime]["4. close"];
-		    ticker.Price["yesterdayClose"] = prices['Time Series (Daily)'][Object.keys(prices['Time Series (Daily)'])[1]]['4. close'];
-		    newTickers.push(ticker);
-		    storage.set(ticker.Symbol, ticker, function(error){
+		this.state.data.getKeys().forEach(symbol=>{
+			av.initialize(symbol).then(()=>{
+				this.state.data.getTicker(symbol).updateLatestPrice(av.getLatestPrice());
+				this.state.data.getTicker(symbol).setYesterdayPrice(av.getYesterdayPrice());
+		    storage.set("Data", this.state.data, function(error){
 		    	if(error) throw error;
-		    });
-		    this.setState({
-		      tickers: newTickers
 		    });
 		  })
 		})
+		this.setState({
+      refreshTime: 0,
+    });
 	}
 
   addTicker(e){
@@ -97,7 +167,8 @@ export default class Home extends Component {
     	addingTicker: false,
     })
     var url = api + this.state.newTickerSymbol;
-    let avurl = avapi + this.state.newTickerSymbol;
+
+    //Get Stock's Basic Info
     fetch(url).then(response => {
       if(response.ok){
         return response.json();
@@ -105,32 +176,22 @@ export default class Home extends Component {
       throw new Error("Error fetching stock data");
     }).then(json => {
       if(json.Message === undefined){
-      	json.Price = {};
-		    fetch(avurl).then(response=>{
-		    	if(response.ok){
-		    		return response.json();
-		    	}
-		    	throw new Error("Error fetching stock price");
-		    }).then(prices=>{
-			    let lastTime = prices['Meta Data']['3. Last Refreshed'].slice(0,10);
-			    json.Price = prices['Time Series (Daily)'][lastTime];
-			    json.Price["bought"] = this.state.newTickerPrice;
-			    json.Price["number"] = this.state.newTickerNumber;
-			    json.Price["yesterdayClose"] = prices['Time Series (Daily)'][Object.keys(prices['Time Series (Daily)'])[1]]['4. close'];
-			    let tickers = this.state.tickers;
-	        tickers.push(json);
-	        storage.set(json.Symbol, json, function(error){
+      	av.initialize(this.state.newTickerSymbol).then(()=>{
+      		var ticker = new Ticker(json.Symbol, json.Name, this.state.newTickerNumber, this.state.newTickerPrice, av.getLatestPrice());
+	      	ticker.setYesterdayPrice(av.getYesterdayPrice());
+
+					this.state.data.addTicker(ticker);
+	        storage.set("Data", this.state.data, function(error){
 	        	if(error) throw error;
 	        });
 	        this.setState({
-	          tickers: tickers,
-	          currentPage: tickers.slice(this.state.page * 5, (this.state.page*5) + 5),
+	          currentPage: this.state.data.getKeys().slice(this.state.page * 5, (this.state.page*5) + 5),
 	          newTickerSymbol: "",
 	          newTickerPrice: 0,
 	          newTickerNumber: 0,
 	          loading: false
-	        });
-		    })      
+	        });    
+      	});
       }
       else{
         throw new Error(json.Message);
@@ -155,9 +216,9 @@ export default class Home extends Component {
   		if(error) throw error;
   	});
   	this.setState({
-  		tickers: [],
+  		data: new Data(),
   		currentPage: [],
-  		page: 1,
+  		page: 0,
   	})
   }
 
@@ -212,31 +273,7 @@ export default class Home extends Component {
   	}
   }
   render() {
-    var tickers = this.state.currentPage.map((ticker)=>{
-    	let change = parseFloat(ticker.Price['4. close']).toFixed(2) - parseFloat(ticker.Price['yesterdayClose']).toFixed(2);
-      change = Math.round((change + 0.00001) * 100) / 100;
-      if(change > 0){
-      	change = "+" + change;
-      }
-      return(
-        <tr key={ticker.Symbol}>
-          <td width="10%" height="5">{ticker.Symbol}</td>
-          <td width="40%" height="5">{ticker.Name}</td>
-          <td width="12%" height="5">{parseFloat(ticker.Price['4. close']).toFixed(2)}</td>
-          <td width="12%" height="5">{change}</td>
-          <td width="12%" height="5">
-          {Math.round(((parseFloat(ticker.Price['4. close'])*ticker.Price["number"])
-          	.toFixed(2) - (ticker.Price['yesterdayClose']*ticker.Price["number"]).toFixed(2) + 0.00001) * 100) / 100}
-          </td>
-          <td width="14%" height="5">
-          {Math.round(((parseFloat(ticker.Price['4. close'])*ticker.Price["number"])
-          	.toFixed(2) - (ticker.Price.bought*ticker.Price["number"]).toFixed(2) + 0.00001) * 100) / 100}
-          </td>
-        </tr>
-      )
-    })
-
-    var addNewTicker = null
+  	var addNewTicker = null
     if(this.state.addingTicker){
     	addNewTicker=(
     	<overlay>
@@ -270,8 +307,32 @@ export default class Home extends Component {
 	    </overlay>
       )
     }
-    	
-
+    var tickers = null;
+    
+    var tickers = this.state.currentPage.map((symbol)=>{
+    	let ticker = this.state.data.getTicker(symbol);
+    	let change = parseFloat(ticker.getLatestPrice()).toFixed(2) - parseFloat(ticker.getYesterdayPrice()).toFixed(2);
+      change = Math.round((change + 0.00001) * 100) / 100;
+      if(change > 0){
+      	change = "+" + change;
+      }
+      return(
+        <tr key={ticker.getSymbol()}>
+          <td width="10%" height="5">{ticker.getSymbol()}</td>
+          <td width="40%" height="5">{ticker.getName()}</td>
+          <td width="12%" height="5">{parseFloat(ticker.getLatestPrice()).toFixed(2)}</td>
+          <td width="12%" height="5">{change}</td>
+          <td width="12%" height="5">
+          {Math.round(((parseFloat(ticker.getLatestPrice())*ticker.getNumStock())
+          	.toFixed(2) - (ticker.getYesterdayPrice()*ticker.getNumStock()).toFixed(2) + 0.00001) * 100) / 100}
+          </td>
+          <td width="14%" height="5">
+          {Math.round(((parseFloat(ticker.getLatestPrice())*ticker.getNumStock())
+          	.toFixed(2) - (ticker.getPriceBought()*ticker.getNumStock()).toFixed(2) + 0.00001) * 100) / 100}
+          </td>
+        </tr>
+      )
+    })
 
     var loading = null;
     if(this.state.loading){
@@ -279,12 +340,12 @@ export default class Home extends Component {
     		<overlay><p>loading...</p></overlay>
     		)
     }
-
     return (
       <div>
         <div className={styles.container} data-tid="container">
         {loading}
         {addNewTicker}
+        Refreshed {this.state.refreshTime} seconds ago.
         <table>
           <tbody>
             <tr>
@@ -306,7 +367,7 @@ export default class Home extends Component {
           	<div className={styles.navDirections}>
 	          	<i className="fa fa-arrow-left fa" 
 	          		onClick={this.prevPage.bind(this)} />
-	          	<p>{this.state.page + 1}/{(this.state.tickers.length === 0)? 1 : Math.ceil(this.state.tickers.length/5)}</p>
+	          	<p>{this.state.page + 1}/{(this.state.data.getKeys().length === 0)? 1 : Math.ceil(this.state.data.getKeys().length/5)}</p>
 	          	<i className="fa fa-arrow-right fa"
 	          		onClick={this.nextPage.bind(this)} />
 	          </div>
