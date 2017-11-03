@@ -10,13 +10,13 @@ const api = "http://dev.markitondemand.com/MODApis/Api/v2/Quote/json?symbol=";
 var av = new alphaVantage(apiKey);
 av.test();
 
-function Ticker(symbol, name, numStock, priceBought, latestPrice){
+function Ticker(symbol, name, numStock, priceBought, latestPrice, yesterdayPrice){
 	this.symbol = symbol;
 	this.numStock = numStock;
 	this.priceBought = priceBought;
 	this.latestPrice = latestPrice;
 	this.name = name;
-	this.yesterdayPrice = 0;
+	this.yesterdayPrice = yesterdayPrice;
 
 	this.updateLatestPrice = function(price){
 		this.latestPrice = price;
@@ -114,7 +114,7 @@ export default class Home extends Component {
     	newData.importTickers(data.tickers);
     	newData.getKeys().forEach(symbol=>{
     		let ticker = newData.getTicker(symbol);
-				let newTicker = new Ticker(ticker.symbol, ticker.name, ticker.numStock, ticker.priceBought, ticker.latestPrice)
+				let newTicker = new Ticker(ticker.symbol, ticker.name, ticker.numStock, ticker.priceBought, ticker.latestPrice, ticker.yesterdayPrice)
 				newData.updateTicker(symbol, newTicker);
 			})
     	console.log(newData);
@@ -127,7 +127,7 @@ export default class Home extends Component {
   }
 
 	componentDidMount() {
-	   var intervalId = setInterval(this.timer, 60000);
+	   var intervalId = setInterval(this.timer, 15000);
 	   var timerId = setInterval(this.refreshTimer, 1000);
 	   // store intervalId in the state so it can be accessed later:
 	   this.setState({intervalId: intervalId});
@@ -177,7 +177,7 @@ export default class Home extends Component {
     }).then(json => {
       if(json.Message === undefined){
       	av.initialize(this.state.newTickerSymbol).then(()=>{
-      		var ticker = new Ticker(json.Symbol, json.Name, this.state.newTickerNumber, this.state.newTickerPrice, av.getLatestPrice());
+      		var ticker = new Ticker(json.Symbol, json.Name, this.state.newTickerNumber, this.state.newTickerPrice, av.getLatestPrice(), av.getYesterdayPrice());
 	      	ticker.setYesterdayPrice(av.getYesterdayPrice());
 
 					this.state.data.addTicker(ticker);
