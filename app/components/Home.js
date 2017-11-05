@@ -117,7 +117,6 @@ export default class Home extends Component {
 				let newTicker = new Ticker(ticker.symbol, ticker.name, ticker.numStock, ticker.priceBought, ticker.latestPrice, ticker.yesterdayPrice)
 				newData.updateTicker(symbol, newTicker);
 			})
-    	console.log(newData);
     	app.setState({
     		data: newData,
     		currentPage: newData.getKeys().slice(0,5),
@@ -155,6 +154,7 @@ export default class Home extends Component {
 		    });
 		  })
 		})
+		console.log("Refreshed");
 		this.setState({
       refreshTime: 0,
     });
@@ -318,7 +318,7 @@ export default class Home extends Component {
       }
       return(
         <tr key={ticker.getSymbol()}>
-          <td width="10%" height="5">{ticker.getSymbol()}</td>
+          <td width="10%" height="5"><Link to={{pathname: '/graph', query:{symbol: ticker.getSymbol()}}} style={{fontSize: "10px"}}>{ticker.getSymbol()}</Link></td>
           <td width="40%" height="5">{ticker.getName()}</td>
           <td width="12%" height="5">{parseFloat(ticker.getLatestPrice()).toFixed(2)}</td>
           <td width="12%" height="5">{change}</td>
@@ -341,36 +341,34 @@ export default class Home extends Component {
     		)
     }
     return (
-      <div>
-        <div className={styles.container} data-tid="container">
-        {loading}
-        {addNewTicker}
-        Refreshed {this.state.refreshTime} seconds ago.
-        <table>
-          <tbody>
-            <tr>
-              <th width="10%">Symbol</th>
-              <th width="40%">Company Name</th>
-              <th width="12%">Price $</th>
-              <th width="12%">Change $</th>
-              <th width="12%">Day's Gain $</th>
-              <th width="14%">Total Gain $</th>
-            </tr>
-            {tickers}
-          </tbody>
-        </table>
-          <div className={styles.nav}>
-          	<div className={styles.navButtons}>
-          		<button onClick={this.addTickerButton}>Add New Ticker</button>
-        			<button onClick={this.clearTickers}>Clear Tickers</button>
-          	</div>
-          	<div className={styles.navDirections}>
-	          	<i className="fa fa-arrow-left fa" 
-	          		onClick={this.prevPage.bind(this)} />
-	          	<p>{this.state.page + 1}/{(this.state.data.getKeys().length === 0)? 1 : Math.ceil(this.state.data.getKeys().length/5)}</p>
-	          	<i className="fa fa-arrow-right fa"
-	          		onClick={this.nextPage.bind(this)} />
-	          </div>
+      <div className={styles.container} data-tid="container">
+      {loading}
+      {addNewTicker}
+      Refreshed {this.state.refreshTime} seconds ago.
+      <table>
+        <tbody>
+          <tr>
+            <th width="10%">Symbol</th>
+            <th width="40%">Company Name</th>
+            <th width="12%">Price $</th>
+            <th width="12%">Change $</th>
+            <th width="12%">Day's Gain $</th>
+            <th width="14%">Total Gain $</th>
+          </tr>
+          {tickers}
+        </tbody>
+      </table>
+        <div className={styles.nav}>
+        	<div className={styles.navButtons}>
+        		<button onClick={this.addTickerButton}>Add New Ticker</button>
+      			<button onClick={this.clearTickers}>Clear Tickers</button>
+        	</div>
+        	<div className={styles.navDirections}>
+          	<i className="fa fa-arrow-left fa" 
+          		onClick={this.prevPage.bind(this)} />
+          	<p>{this.state.page + 1}/{(this.state.data.getKeys().length === 0)? 1 : Math.ceil(this.state.data.getKeys().length/5)}</p>
+          	<i className="fa fa-arrow-right fa"
+          		onClick={this.nextPage.bind(this)} />
           </div>
         </div>
       </div>

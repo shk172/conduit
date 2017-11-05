@@ -1,9 +1,11 @@
 function alphaVantage(key){
 	this.api = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&apikey=" + key + "&symbol=";
+	this.intradayApi = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&interval=5min&apikey=" + key + "&symbol=";
 	this.lastRefreshDate = "";
 	this.lastRefreshTime = "";
 	this.latestPrice = 0;
 	this.yesterdayPrice = 0;
+	this.intradayPrices = {};
 
 }
 alphaVantage.prototype.initialize = function(symbol){
@@ -23,6 +25,23 @@ alphaVantage.prototype.initialize = function(symbol){
 			})
 		})
 };
+
+alphaVantage.prototype.initializeIntraday = function(symbol){
+	let app = this;
+	return new Promise(
+		function(resolve, reject){
+			fetch(app.intradayApi + symbol).then(response=>{
+				if(response.ok)
+					return response.json();
+				throw new Error("Error fetching prices");
+			}).then(json=>{
+				app.lastRefreshTime = json['Meta Data']['3. Last Refreshed'];
+				app.lastRefreshDate = json['Meta Data']['3. Last Refreshed'].slice(0,10);
+				app.intradayPrices = json['Time Series (5min)'];
+				resolve();
+			})
+		})
+}
 
 alphaVantage.prototype.getLastRefreshTime = function(){
 	return this.lastRefreshTime;
