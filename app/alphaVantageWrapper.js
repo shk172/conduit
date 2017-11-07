@@ -23,7 +23,10 @@ alphaVantage.prototype.initialize = function(symbol){
 				app.yesterdayPrice = json['Time Series (Daily)'][Object.keys(json['Time Series (Daily)'])[1]]['4. close'];
 				resolve();
 			})
-		})
+		}).catch(error =>{
+      console.log(error);
+      reject();
+    })
 };
 
 alphaVantage.prototype.initializeIntraday = function(symbol){
@@ -35,6 +38,7 @@ alphaVantage.prototype.initializeIntraday = function(symbol){
 					return response.json();
 				throw new Error("Error fetching prices");
 			}).then(json=>{
+				console.log(json);
 				app.lastRefreshTime = json['Meta Data']['3. Last Refreshed'];
 				app.lastRefreshDate = json['Meta Data']['3. Last Refreshed'].slice(0,10);
 				app.intradayPrices = json['Time Series (5min)'];

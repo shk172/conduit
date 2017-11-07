@@ -8,16 +8,6 @@ const apiKey = "K2KAC8WYMD2CQHI5"
 var av = new alphaVantage(apiKey);
 av.test();
 
-const data = {
-  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-  datasets: [{
-      label: '# of Votes',
-      data: [12, 19, 3, 5, 2, 3],
-      borderColor: 'rgba(255, 255, 255, 0.7)',
-      borderWidth: 1,
-
-  }]
-}
 const options = { 
   scales:{
     xAxes:[{
@@ -60,17 +50,63 @@ class Counter extends Component {
     decrement: () => void,
     counter: number
   };
-
+  constructor(props){
+    super(props);
+    this.state={
+      keys: [],
+      data: [],
+      openPrice: [],
+    }
+  }
   componentWillMount(){
     console.log(this.props);
-    av.initializeIntraday("nvda").then(()=>{
-      console.log(av);
+    this.setState({loading: true})
+    av.initializeIntraday(this.props.location.query.symbol).then(()=>{
       console.log(av.intradayPrices);
+      console.log(av.lastRefreshDate);
+      console.log(av.lastRefreshTime);
+      Object.keys(av.intradayPrices).forEach((time)=>{
+        let key = time.slice(11, 20);
+        if(time.slice(0,10) == av.lastRefreshDate){
+          this.state.keys.unshift(key);
+          this.state.data.unshift(av.intradayPrices[time]['4. close']);
+          this.state.openPrice.push(this.props.location.query.openPrice);
+        } 
+      })
+      this.setState({loading: false})
+    }).catch((error)=>{
+      console.log(error);
     });
   }
 
   render() {
     const { increment, incrementIfOdd, incrementAsync, decrement, counter } = this.props;
+    var loading = null;
+    if(this.state.loading){
+      loading =(
+        <overlay><l>loading...</l></overlay>
+        )
+    }
+
+    var data = {
+      labels: this.state.keys,
+      datasets: [{
+          label: 'Price',
+          data: this.state.data,
+          borderColor: 'rgba(255, 255, 255, 0.7)',
+          borderWidth: 1,
+          pointRadius: 0,
+
+      },
+      {
+        label: 'Price at open',
+        data: this.state.openPrice,
+        borderColor: 'rgba(255, 0, 0, 1)',
+        borderWidth: 1,
+        pointRadius: 0,
+      }]
+    }
+
     return (
       /*
       <div className={`counter ${styles.counter}`} data-tid="counter">
@@ -89,6 +125,7 @@ class Counter extends Component {
       */
 
       <div>
+        {loading}
         <div className={styles.top}>
           <div className={styles.backButton} data-tid="backButton">
             <Link to="/">

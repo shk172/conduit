@@ -44,7 +44,9 @@ td{
 .link{
 	font-size: 10px;
 }
-
+r{
+	font-size: 10px;
+}
 overlay {
 	position:absolute;
   top:0;

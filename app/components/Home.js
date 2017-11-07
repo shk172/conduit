@@ -318,7 +318,7 @@ export default class Home extends Component {
       }
       return(
         <tr key={ticker.getSymbol()}>
-          <td width="10%" height="5"><Link to={{pathname: '/graph', query:{symbol: ticker.getSymbol()}}} style={{fontSize: "10px"}}>{ticker.getSymbol()}</Link></td>
+          <td width="10%" height="5"><Link to={{pathname: '/graph', query:{symbol: ticker.getSymbol(), openPrice: ticker.getYesterdayPrice()}}} style={{fontSize: "10px"}}>{ticker.getSymbol()}</Link></td>
           <td width="40%" height="5">{ticker.getName()}</td>
           <td width="12%" height="5">{parseFloat(ticker.getLatestPrice()).toFixed(2)}</td>
           <td width="12%" height="5">{change}</td>
@@ -344,7 +344,6 @@ export default class Home extends Component {
       <div className={styles.container} data-tid="container">
       {loading}
       {addNewTicker}
-      Refreshed {this.state.refreshTime} seconds ago.
       <table>
         <tbody>
           <tr>
@@ -359,6 +358,7 @@ export default class Home extends Component {
         </tbody>
       </table>
         <div className={styles.nav}>
+        	<r>Refreshed {this.state.refreshTime} seconds ago.</r>
         	<div className={styles.navButtons}>
         		<button onClick={this.addTickerButton}>Add New Ticker</button>
       			<button onClick={this.clearTickers}>Clear Tickers</button>
