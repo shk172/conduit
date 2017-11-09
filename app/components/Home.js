@@ -79,6 +79,9 @@ function Data(){
 	this.getKeys = function(){
 		return Object.keys(this.tickers);
 	}
+	this.getLength = function(){
+		return Object.keys(this.tickers).length;
+	}
 }
 
 
@@ -126,16 +129,18 @@ export default class Home extends Component {
   }
 
 	componentDidMount() {
-	   var intervalId = setInterval(this.timer, 15000);
+	   var intervalId = setInterval(this.timer, 60000);
 	   var timerId = setInterval(this.refreshTimer, 1000);
 	   // store intervalId in the state so it can be accessed later:
-	   this.setState({intervalId: intervalId});
+	   this.setState({intervalId: intervalId, timerId: timerId});
 	}
 
 
 	componentWillUnmount() {
 	   // use intervalId from the state to clear the interval
 	   clearInterval(this.state.intervalId);
+	   clearInterval(this.state.timerId);
+	   this.setState({loading: true});
 	}
 
 	refreshTimer(){
@@ -152,9 +157,12 @@ export default class Home extends Component {
 		    storage.set("Data", this.state.data, function(error){
 		    	if(error) throw error;
 		    });
+		    console.log("Refreshed " + symbol);
+		  }).catch(error=>{
+		  	console.log(error);
 		  })
 		})
-		console.log("Refreshed");
+		
 		this.setState({
       refreshTime: 0,
     });
@@ -244,18 +252,19 @@ export default class Home extends Component {
 
   nextPage(){
   	let page = this.state.page;
-  	if(this.state.tickers.length <= 5){
+  	let length = this.state.data.getLength();
+  	if(length <= 5){
   		alert("No more page after this");
   		return;
   	}
-  	if(Math.ceil(this.state.tickers.length/5) <= page + 1){
+  	if(Math.ceil(length/5) <= page + 1){
   		alert("No more page after this");
   		return;
   	}
   	else{
   		page++;
   		this.setState({
-  			currentPage: this.state.tickers.slice((page * 5), (page + 1)*5),
+  			currentPage: this.state.data.getKeys().slice((page * 5), (page + 1)*5),
   			page: page,
   		})
   	}
@@ -267,11 +276,12 @@ export default class Home extends Component {
   	}
   	else{
   		this.setState({
-  			currentPage: this.state.tickers.slice((page - 1) * 5, page*5),
+  			currentPage: this.state.data.getKeys().slice((page - 1) * 5, page*5),
   			page: page - 1,
   		})
   	}
   }
+
   render() {
   	var addNewTicker = null
     if(this.state.addingTicker){
@@ -318,7 +328,7 @@ export default class Home extends Component {
       }
       return(
         <tr key={ticker.getSymbol()}>
-          <td width="10%" height="5"><Link to={{pathname: '/graph', query:{symbol: ticker.getSymbol(), openPrice: ticker.getYesterdayPrice()}}} style={{fontSize: "10px"}}>{ticker.getSymbol()}</Link></td>
+          <td width="10%" height="5"><Link to={{pathname: '/graph', query:{symbol: ticker.getSymbol(), name: ticker.getName(), openPrice: ticker.getYesterdayPrice()}}} style={{fontSize: "10px"}}>{ticker.getSymbol()}</Link></td>
           <td width="40%" height="5">{ticker.getName()}</td>
           <td width="12%" height="5">{parseFloat(ticker.getLatestPrice()).toFixed(2)}</td>
           <td width="12%" height="5">{change}</td>

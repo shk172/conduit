@@ -56,15 +56,14 @@ class Counter extends Component {
       keys: [],
       data: [],
       openPrice: [],
+      error: false,
     }
   }
   componentWillMount(){
-    console.log(this.props);
     this.setState({loading: true})
-    av.initializeIntraday(this.props.location.query.symbol).then(()=>{
-      console.log(av.intradayPrices);
-      console.log(av.lastRefreshDate);
-      console.log(av.lastRefreshTime);
+    av.initializeIntraday(this.props.location.query.symbol).then((error)=>{
+      console.log(error);
+    }).then(()=>{
       Object.keys(av.intradayPrices).forEach((time)=>{
         let key = time.slice(11, 20);
         if(time.slice(0,10) == av.lastRefreshDate){
@@ -76,6 +75,7 @@ class Counter extends Component {
       this.setState({loading: false})
     }).catch((error)=>{
       console.log(error);
+      this.setState({error: true})
     });
   }
 
@@ -106,24 +106,21 @@ class Counter extends Component {
         pointRadius: 0,
       }]
     }
-
+    if(this.state.error){
+      return(
+        <div>
+          <overlay><l>There was an error retrieving the data. Please try again later.</l></overlay>
+          <div className={styles.top}>
+            <div className={styles.backButton} data-tid="backButton">
+              <Link to="/">
+                <i className="fa fa-arrow-left fa-2x" />
+              </Link>
+            </div>
+          </div>
+        </div>
+        )
+    }
     return (
-      /*
-      <div className={`counter ${styles.counter}`} data-tid="counter">
-          {counter}
-        </div>
-        <div className={styles.btnGroup}>
-          <button className={styles.btn} onClick={increment} data-tclass="btn">
-            <i className="fa fa-plus" />
-          </button>
-          <button className={styles.btn} onClick={decrement} data-tclass="btn">
-            <i className="fa fa-minus" />
-          </button>
-          <button className={styles.btn} onClick={incrementIfOdd} data-tclass="btn">odd</button>
-          <button className={styles.btn} onClick={() => incrementAsync()} data-tclass="btn">async</button>
-        </div>
-      */
-
       <div>
         {loading}
         <div className={styles.top}>
@@ -133,7 +130,7 @@ class Counter extends Component {
             </Link>
           </div>
           <div className={styles.title}>
-            {this.props.location.query.symbol}
+            {this.props.location.query.name} ({this.props.location.query.symbol})
           </div>
         </div>
         <div className={styles.graph}>

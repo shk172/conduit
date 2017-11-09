@@ -15,18 +15,24 @@ alphaVantage.prototype.initialize = function(symbol){
 			fetch(app.api + symbol).then(response=>{
 				if(response.ok)
 					return response.json();
-				throw new Error("Error fetching prices");
+				throw new Error(response.status);
 			}).then(json=>{
-				app.lastRefreshTime = json['Meta Data']['3. Last Refreshed'];
-				app.lastRefreshDate = json['Meta Data']['3. Last Refreshed'].slice(0,10);
-				app.latestPrice = json['Time Series (Daily)'][app.lastRefreshDate]["4. close"];
-				app.yesterdayPrice = json['Time Series (Daily)'][Object.keys(json['Time Series (Daily)'])[1]]['4. close'];
-				resolve();
-			})
-		}).catch(error =>{
-      console.log(error);
-      reject();
-    })
+				if(json['Error Message'] === undefined){
+					app.lastRefreshTime = json['Meta Data']['3. Last Refreshed'];
+					app.lastRefreshDate = json['Meta Data']['3. Last Refreshed'].slice(0,10);
+					app.latestPrice = json['Time Series (Daily)'][app.lastRefreshDate]["4. close"];
+					app.yesterdayPrice = json['Time Series (Daily)'][Object.keys(json['Time Series (Daily)'])[1]]['4. close'];
+					resolve();
+				}
+				else{
+					console.log("Error");
+					reject(json['Error Message']);
+				}
+			}).catch(error =>{
+	      console.log(error);
+	      reject();
+	    })
+		})
 };
 
 alphaVantage.prototype.initializeIntraday = function(symbol){
@@ -38,11 +44,19 @@ alphaVantage.prototype.initializeIntraday = function(symbol){
 					return response.json();
 				throw new Error("Error fetching prices");
 			}).then(json=>{
-				console.log(json);
-				app.lastRefreshTime = json['Meta Data']['3. Last Refreshed'];
-				app.lastRefreshDate = json['Meta Data']['3. Last Refreshed'].slice(0,10);
-				app.intradayPrices = json['Time Series (5min)'];
-				resolve();
+				if(json['Error Message'] === undefined){
+					app.lastRefreshTime = json['Meta Data']['3. Last Refreshed'];
+					app.lastRefreshDate = json['Meta Data']['3. Last Refreshed'].slice(0,10);
+					app.intradayPrices = json['Time Series (5min)'];
+					resolve();
+				}
+				else{
+					console.log("Error retrieving prices");
+					reject(json['Error Message']);
+				}
+			}).catch(error =>{
+				console.log(error);
+				reject(error);
 			})
 		})
 }

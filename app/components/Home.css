@@ -57,7 +57,9 @@ overlay {
   z-index:9999;
   color: white;
 }
-
+overlay form{
+	margin-top: 50px;
+}
 .nav{
 	display: flex;
 	flex-direction: column;
